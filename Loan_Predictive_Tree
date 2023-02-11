@@ -1,0 +1,85 @@
+from pathlib import Path
+Path.cwd()
+
+import pandas as pd
+from sklearn.tree import DecisionTreeClassifier ### Decision Tree for classification
+
+loan_df = pd.read_csv('UniversalBank.csv')
+loan_df
+
+def validation_split(data_df, valid_ratio): # data_df is the original dataframe, valid ratio is the desired proportion of validation data 
+    split_dict = {}
+    import numpy as np
+    np.random.seed(0) ## this just makes sure you get the same split if you re-run
+    data_df["random"] = list(np.random.uniform(0.0, 1.0, len(data_df.index))) 
+    data_df["valid"] = (data_df.random <=valid_ratio)
+    split_dict["valid"]   = data_df[data_df.valid].drop(columns = ["random", "valid"])
+    split_dict["train"]   = data_df[~data_df.valid].drop(columns = ["random", "valid"])
+    return(split_dict)
+    
+# Divide loan_df into valid and training data    
+loan_df_valid = validation_split(loan_df, 0.3)["valid"]
+
+loan_df_train = validation_split(loan_df, 0.3)["train"]
+
+#training data
+train_predictors = loan_df_train.drop(columns = "Accept_Loan")
+train_actual = loan_df_train["Accept_Loan"]
+
+#Validation
+valid_predictors = loan_df_valid.drop(columns = "Accept_Loan")
+valid_actual = loan_df_valid["Accept_Loan"]
+
+#Tree
+tree_loan = DecisionTreeClassifier(max_depth = 3, min_samples_split = 20, min_samples_leaf = 10) 
+tree_loan.fit(train_predictors, train_actual)
+
+#Graph the tree
+from sklearn.tree import plot_tree
+import matplotlib.pyplot as plt 
+plt.figure(figsize=(18,12))
+plot_tree(tree_loan, feature_names = train_predictors.columns, filled = True)
+plt.show
+
+
+#Baseline accuracy
+# loan_df.shape five 4000 by 14 table
+
+baseline_percent=sum(loan_df.Accept_Loan==1)/4000
+print(str(100-(baseline_percent*100))+('%'))
+
+#90.5% accuracy
+
+#Testing accuracy
+loan_df_train["Tree1_Prediction"] = tree_loan.predict(train_predictors)  
+loan_df_valid["Tree1_Prediction"] = tree_loan.predict(valid_predictors)
+
+#Matrix
+def Class_Metrics(actual, predicted):
+    CM = {}
+    for item in ["TP","FP","TN","FN", "ACC","PREC","RECALL"]: #initialzing all of them to zero 
+        CM[item] = 0
+    length = len(actual)
+    for indexnum in range(0,length):
+        CM["TP"] = CM["TP"] + (actual[indexnum] == 1 and predicted[indexnum] ==1)
+        CM["FP"] = CM["FP"] + (actual[indexnum] == 0 and predicted[indexnum] ==1)
+        CM["TN"] = CM["TN"] + (actual[indexnum] == 0 and predicted[indexnum] ==0)
+        CM["FN"] = CM["FN"] + (actual[indexnum] == 1 and predicted[indexnum] ==0)
+    # Accuracy is calculated after the for loop 
+    CM["ACC"] = (CM["TP"] + CM["TN"])/length
+    CM["PREC"] = CM["TP"] /(CM["TP"] + CM["FP"] )
+    CM["RECALL"] = CM["TP"] /(CM["TP"] + CM["FN"] )
+    return(CM)
+    
+    
+#Validation Accuracy
+Class_Metrics(list(loan_df_valid["Accept_Loan"]), list(loan_df_valid["Tree1_Prediction"])) 
+
+#98.4% accuracy when tested against original data
+
+
+#Training Accuracy
+Class_Metrics(list(loan_df_train["Accept_Loan"]), list(loan_df_train["Tree1_Prediction"])) 
+
+#97.8% accuracy when tested against new data
+
