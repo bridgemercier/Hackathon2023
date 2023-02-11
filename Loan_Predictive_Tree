@@ -83,3 +83,7 @@ Class_Metrics(list(loan_df_train["Accept_Loan"]), list(loan_df_train["Tree1_Pred
 
 #97.8% accuracy when tested against new data
 
+#Testing out data 
+x = tree_loan.predict(np.array([46,21,156,3,1.9,3,315,0,0,1,0]).reshape(1,-1))
+x
+
