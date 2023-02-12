@@ -1,1 +1,82 @@
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+library(plotly)
+library(gridExtra)
+x2022<-read_csv("2022_NC_Data.csv")
+view(x2022)
+x2022$INCOME<-factor(x2022$INCOME,
+                      levels=c("Less than $25,000",
+                               "$25,000 - $34,999",
+                               "$35,000 - $49,999",
+                               "$50,000 - $74,999",
+                               "$75,000 - $99,999",
+                               "$100,000 - $149,999",
+                               "$150,000 - $199,999",
+                               "$200,000 and above"))
+x2022$EXPNS_DIF<-factor(x2022$EXPNS_DIF,
+                        levels=c("No difficulty",
+                                 "Little difficulty",
+                                 "Somewhat difficult",
+                                 "Very difficult"))
+View(x2022)
+
+#Filter Missing Vals
+Filter1 <- filter(x2022,!is.na(Housing),!is.na(INCOME))
+View(Filter1)
+g1<-ggplot(Filter1,aes(x=Housing,(y=..density../10)))+
+  geom_histogram(color="blue",bins = 4,binwidth = .5)+
+  facet_wrap(~INCOME)+
+  labs(y="Density", title = "Housing Status Based on Income Level")
+g1
+
+# For reference, the housing status is as follow:
+# 1=housing owned by you or someone in the family (free), 
+# 2=housing owned by you or someone in the family with mortgages
+# 3= rent
+# 4=occupied without paying rent
+
+
+
+#Housing based on Gender
+Filter2 <- filter(x2022,!is.na(Housing),!is.na(Gender))
+
+g2<-ggplot(Filter2,aes(x=Housing,(y=..density../10)))+
+  geom_histogram(color="blue",bins = 4)+
+  facet_wrap(~Gender)
+g2
+
+
+#Housing based on Race
+Filter3 <- filter(x2022,!is.na(Housing),!is.na(Race))
+
+g3<-ggplot(Filter3,aes(x=Housing,(y=..density../10)))+
+  geom_histogram(color="blue",bins = 4)+
+  facet_wrap(~Race)
+g3
+
+#Housing vs Exp Diff 
+Filter4 <- filter(x2022,!is.na(Housing),!is.na(EXPNS_DIF))
+View(Filter4)
+g4<-ggplot(Filter4,aes(x=Housing,(y=..density../10)))+
+  geom_histogram(color="blue",bins = 4)+
+  facet_wrap(~EXPNS_DIF)+
+  labs(title = "Housing vs Exp Diff")
+g4
+
+#Income vs Exp Dif
+Filter5 <- filter(x2022,!is.na(INCOME),!is.na(EXPNS_DIF))
+
+g5<-ggplot(Filter5,aes(x=Income2,(y=..density../10)))+
+  geom_histogram(color="blue",bins = 4)+
+  facet_wrap(~EXPNS_DIF)+
+  labs(title = "Income vs Exp Diff")
+g5
+
+
+grid.arrange(g1, g2, g3, g4, nrow = 2)
+grid.arrange(g1,arrangeGrob(g4,g5,nrow=1),nrow=2)
+
+
+?scale_discrete_manual
 
